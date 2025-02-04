@@ -117,10 +117,44 @@ def plot_categorical_distributions(df, exclude_columns=None, selected_columns=No
 
             plt.show()
 
+def plot_correlation_heatmap(df, selected_columns=None, method="pearson", figsize=(10, 8), annot=True, cmap="coolwarm"):
+    """
+    Plots a heatmap of the correlation matrix for numerical features.
+
+    Args:
+        df (pd.DataFrame): The dataset.
+        selected_columns (list, optional): List of specific numerical columns to include in the heatmap.
+        method (str): Correlation method - "pearson", "spearman", or "kendall". Default is "pearson".
+        figsize (tuple): Size of the heatmap figure. Default is (10, 8).
+        annot (bool): Whether to display correlation values inside the heatmap. Default is True.
+        cmap (str): Colormap for the heatmap. Default is "coolwarm".
+    """
+
+    # Select numerical columns
+    num_df = df.select_dtypes(include=["int64", "float64"])
+
+    # If selected_columns are provided, filter them
+    if selected_columns:
+        num_df = num_df[selected_columns]
+
+    if num_df.shape[1] < 2:
+        print("⚠️ Not enough numerical features to compute correlation.")
+        return
+
+    # Compute correlation matrix
+    corr_matrix = num_df.corr(method=method)
+
+    # Plot heatmap
+    plt.figure(figsize=figsize)
+    sns.heatmap(corr_matrix, annot=annot, cmap=cmap, fmt=".2f", linewidths=0.5, vmin=-1, vmax=1)
+    plt.title(f"{method.capitalize()} Correlation Heatmap")
+    plt.show()
 
 
 if __name__ == "__main__":
     df = load_data()  
     summarize_data(df)
     plot_distributions(df, exclude_columns=["passengerid", "survived"], layout="single")
-    plot_categorical_distributions(df, selected_columns="Cabin", layout="single", top_n=100)
+    plot_categorical_distributions(df, layout="single", top_n=100)
+    plot_correlation_heatmap(df, method="kendall", cmap="viridis")
+    plot_correlation_heatmap(df, selected_columns=["Age", "SibSp", "Parch", "Fare"])
