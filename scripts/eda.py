@@ -17,7 +17,7 @@ def summarize_data(df):
     print(df.describe())
 
 
-def plot_distributions(df, exclude_columns=None):
+def plot_distributions(df, exclude_columns=None, layout="multiple"):
     """
     Plots distributions for all numerical columns.
 
@@ -29,14 +29,25 @@ def plot_distributions(df, exclude_columns=None):
     num_cols = df.select_dtypes(include=["int64", "float64"]).columns
     num_cols = [col for col in num_cols if col.lower() not in exclude_columns]  # Exclude specified columns
     
-    for col in num_cols:
-        plt.figure(figsize=(8, 4))
-        sns.histplot(df[col].dropna(), kde=True)
-        plt.title(f"Distribution of {col}")
+    if layout == "single":
+        # ✅ Option 1: Display all distributions in one figure
+        plt.figure(figsize=(15, 10))
+        df[num_cols].hist(bins=30, figsize=(15, 10), edgecolor='black')
+
+        plt.suptitle("Feature Distributions", fontsize=16)
+        plt.subplots_adjust(hspace=0.5, wspace=0.3)
         plt.show()
+
+    else:
+        # ✅ Option 2: Display each plot one by one (current behavior)
+        for col in num_cols:
+            plt.figure(figsize=(8, 4))
+            sns.histplot(df[col].dropna(), kde=True)
+            plt.title(f"Distribution of {col}")
+            plt.show()
 
 if __name__ == "__main__":
     df = load_data()  
     summarize_data(df)
-    plot_distributions(df, exclude_columns=["passengerid", "survived"])
+    plot_distributions(df, exclude_columns=["passengerid", "survived"], layout="single")
 
