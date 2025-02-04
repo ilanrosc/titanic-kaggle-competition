@@ -1,27 +1,30 @@
 from .data_loader import load_data  
 
 def extract_title(df, name_column="Name"):
-    """Extracts passenger titles from a specified name column."""
-    df = df.copy()
-    
-    if name_column in df.columns:
-        df["Title"] = df[name_column].str.extract(r" ([A-Za-z]+)\.")
-        title_replacements = {
-            "Mlle": "Miss", "Ms": "Miss", "Mme": "Mrs",
-            "Don": "Other", "Rev": "Other", "Dr": "Other",
-            "Major": "Other", "Col": "Other", "Capt": "Other",
-            "Sir": "Other", "Jonkheer": "Other", "Dona": "Other",
-            "Countess": "Other", "Lady": "Other"
-        }
-        df["Title"] = df["Title"].replace(title_replacements)
-    return df
+    """
+    Extracts the title from the passenger's name and creates a new 'Title' column.
 
-def create_family_size(df, sibsp_col="SibSp", parch_col="Parch"):
-    """Creates a new feature dynamically for family size."""
-    df = df.copy()
+    Args:
+        df (pd.DataFrame): The dataset.
+        name_column (str): The column name containing passenger names.
 
-    if sibsp_col in df.columns and parch_col in df.columns:
-        df["FamilySize"] = df[sibsp_col] + df[parch_col] + 1
+    Returns:
+        pd.DataFrame: Updated DataFrame with the new 'Title' column.
+    """
+    df = df.copy()  
+
+    df["Title"] = df[name_column].str.extract(r" ([A-Za-z]+)\.")  # Extract title from name
+
+    # Standardize rare/misspelled titles
+    title_replacements = {
+        "Mlle": "Miss", "Ms": "Miss", "Mme": "Mrs", 
+        "Dr": "Rare", "Rev": "Rare", "Major": "Rare", "Col": "Rare", 
+        "Capt": "Rare", "Sir": "Rare", "Lady": "Rare", "Jonkheer": "Rare", 
+        "Don": "Rare", "Dona": "Rare", "Countess": "Rare"
+    }
+
+    df["Title"] = df["Title"].replace(title_replacements)
+
     return df
 
 if __name__ == "__main__":
