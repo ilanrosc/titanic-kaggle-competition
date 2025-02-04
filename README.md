@@ -1,7 +1,7 @@
 # Titanic Kaggle Competition
 
 ## Overview
-This project is part of the **Titanic: Machine Learning from Disaster** Kaggle competition. The goal is to predict which passengers survived the Titanic shipwreck using machine learning techniques.
+This project is part of the **Titanic: Machine Learning from Disaster** Kaggle competition. The goal is to predict which passengers survived the Titanic shipwreck using machine learning techniques. We aim to go beyond standard analyses by incorporating advanced feature engineering, data preprocessing, and model optimization techniques to create a unique and competitive solution.
 
 ## Project Structure
 ```
