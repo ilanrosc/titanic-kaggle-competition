@@ -1,8 +1,8 @@
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from sklearn.metrics import accuracy_score
-from data_loader import load_data
-from data_split import split_data
+from .data_loader import load_data
+from .data_split import split_data
 from preprocessing import fill_missing_values, encode_categorical, scale_features
 
 def stack_models(df, target_column="Survived", test_size=0.2, random_state=42, exclude_columns=None):

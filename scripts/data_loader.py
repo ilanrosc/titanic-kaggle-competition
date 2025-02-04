@@ -1,7 +1,7 @@
 import pandas as pd
 import os
 
-def load_data(data_path="../data/titanic", filename="train.csv"):
+def load_data(data_path="../data", filename="train.csv"):
     """
     Loads a CSV file into a pandas DataFrame.
     

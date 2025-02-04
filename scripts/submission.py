@@ -1,5 +1,5 @@
 import pandas as pd
-from data_loader import load_data
+from .data_loader import load_data
 from model_training import train_model
 
 def generate_submission(model, test_data, filename="submission.csv"):

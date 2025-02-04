@@ -1,12 +1,21 @@
 import matplotlib.pyplot as plt
 import seaborn as sns
-from data_loader import load_data
+from .data_loader import load_data
 
 def summarize_data(df):
     """Prints dataset info, missing values, and summary statistics."""
-    print("Dataset Info:\n", df.info())
-    print("\nMissing Values:\n", df.isnull().sum())
-    print("\nSummary Statistics:\n", df.describe())
+    print("📌 Dataset Info:")
+    df.info()
+
+    print("\n📌 Missing Values:")
+    print(df.isnull().sum())
+
+    duplicate_count = df.duplicated().sum()
+    print(f"\n📌 Duplicate Rows: {duplicate_count}")
+
+    print("\n📌 Summary Statistics:")
+    print(df.describe())
+
 
 def plot_distributions(df, exclude_columns=None):
     """

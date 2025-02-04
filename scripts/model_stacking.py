@@ -2,7 +2,7 @@ import numpy as np
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
-from data_loader import load_data
+from .data_loader import load_data
 
 def stack_models(df):
     """Uses two models and averages their predictions."""

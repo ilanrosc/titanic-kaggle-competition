@@ -1,11 +1,11 @@
-from data_loader import load_data  
+from .data_loader import load_data  
 
 def extract_title(df, name_column="Name"):
     """Extracts passenger titles from a specified name column."""
     df = df.copy()
     
     if name_column in df.columns:
-        df["Title"] = df[name_column].str.extract(" ([A-Za-z]+)\.")
+        df["Title"] = df[name_column].str.extract(r" ([A-Za-z]+)\.")
         title_replacements = {
             "Mlle": "Miss", "Ms": "Miss", "Mme": "Mrs",
             "Don": "Other", "Rev": "Other", "Dr": "Other",
@@ -13,7 +13,7 @@ def extract_title(df, name_column="Name"):
             "Sir": "Other", "Jonkheer": "Other", "Dona": "Other",
             "Countess": "Other", "Lady": "Other"
         }
-        df["Title"].replace(title_replacements, inplace=True)
+        df["Title"] = df["Title"].replace(title_replacements)
     return df
 
 def create_family_size(df, sibsp_col="SibSp", parch_col="Parch"):

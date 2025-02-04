@@ -1,5 +1,5 @@
 from sklearn.preprocessing import LabelEncoder, StandardScaler
-from data_loader import load_data
+from .data_loader import load_data
 
 def fill_missing_values(df, strategy="median", constant_value=None):
     """

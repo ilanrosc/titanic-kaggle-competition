@@ -1,5 +1,5 @@
 from sklearn.model_selection import train_test_split
-from data_loader import load_data  # Import reusable data loader
+from .data_loader import load_data  # Import reusable data loader
 
 def split_data(df, target_column, test_size=0.2, random_state=42, exclude_columns=None):
     """
