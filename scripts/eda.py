@@ -74,6 +74,17 @@ def plot_categorical_distributions(df, exclude_columns=None, selected_columns=No
             return
     df_copy = df.copy()
 
+    def add_count_labels(ax):
+        """Adds count labels inside bars with auto-color adjustment."""
+        for p in ax.patches:
+            if p.get_height() > 0:
+                # Adjust text position inside the bar
+                position_y = p.get_height() / 2  # Centered vertically
+                color = "white" if p.get_height() > 10 else "black"  # White text for tall bars, black for short bars
+                ax.annotate(f"{int(p.get_height())}", 
+                            (p.get_x() + p.get_width() / 2, position_y), 
+                            ha="center", va="center", fontsize=10, color=color, fontweight="bold")
+
     # Step 3: Handle 'single' or 'multiple' layout
     if layout == "single":
         num_cols = len(cat_cols)
@@ -87,12 +98,15 @@ def plot_categorical_distributions(df, exclude_columns=None, selected_columns=No
 
             sns.countplot(data=df_copy[df_copy[col].isin(top_categories.index)], 
                           x=col, hue=hue_feature if hue_feature else col, palette="coolwarm", ax=axes[i], 
-                          legend=True if hue_feature else False, order=top_categories.index)
+                          legend=True if hue_feature else False, order=top_categories.index, stat="count")
             axes[i].set_title(f"Distribution of {col}" + (f" by {hue_feature}" if hue_feature else ""))
 
-            # Fix: Ensure x-ticks are correctly set before applying labels
+            # Ensure x-ticks are correctly set before applying labels
             axes[i].set_xticks(range(len(top_categories)))
             axes[i].set_xticklabels(top_categories.index, rotation=30, ha="right")
+
+            # Add count labels inside bars
+            add_count_labels(axes[i])
 
         # Remove empty subplot if num_cols is odd
         if num_cols % 2 != 0:
@@ -109,12 +123,15 @@ def plot_categorical_distributions(df, exclude_columns=None, selected_columns=No
 
             ax = sns.countplot(data=df_copy[df_copy[col].isin(top_categories.index)], 
                           x=col, hue=hue_feature if hue_feature else col, palette="coolwarm", 
-                          legend=True if hue_feature else False, order=top_categories.index)
+                          legend=True if hue_feature else False, order=top_categories.index, stat="count")
             plt.title(f"Distribution of {col}" + (f" by {hue_feature}" if hue_feature else ""))
 
-            # Fix: Ensure x-ticks are correctly set before applying labels
+            # Ensure x-ticks are correctly set before applying labels
             ax.set_xticks(range(len(top_categories)))
             ax.set_xticklabels(top_categories.index, rotation=30, ha="right")
+
+            # Add count labels inside bars
+            add_count_labels(ax)
 
             plt.show()
 
