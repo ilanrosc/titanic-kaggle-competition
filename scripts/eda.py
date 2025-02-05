@@ -1,7 +1,8 @@
 import matplotlib.pyplot as plt
 import seaborn as sns
 import math
-from .data_loader import load_data
+import pandas as pd
+from data_loader import load_data
 
 def summarize_data(df):
     """Prints dataset info, missing values, and summary statistics."""
@@ -117,7 +118,7 @@ def plot_categorical_distributions(df, exclude_columns=None, selected_columns=No
 
             plt.show()
 
-def plot_correlation_heatmap(df, selected_columns=None, method="pearson", figsize=(10, 8), annot=True, cmap="coolwarm"):
+def plot_correlation_heatmap(df, selected_columns=None, method="pearson", figsize=(10, 8), annot=True, cmap="coolwarm", show_dataframe=False):
     """
     Plots a heatmap of the correlation matrix for numerical features.
 
@@ -144,6 +145,10 @@ def plot_correlation_heatmap(df, selected_columns=None, method="pearson", figsiz
     # Compute correlation matrix
     corr_matrix = num_df.corr(method=method)
 
+    # Option to return DataFrame instead of plotting
+    if show_dataframe:
+        return corr_matrix
+
     # Plot heatmap
     plt.figure(figsize=figsize)
     sns.heatmap(corr_matrix, annot=annot, cmap=cmap, fmt=".2f", linewidths=0.5, vmin=-1, vmax=1)
@@ -152,9 +157,13 @@ def plot_correlation_heatmap(df, selected_columns=None, method="pearson", figsiz
 
 
 if __name__ == "__main__":
-    df = load_data()  
+    df = load_data()
     summarize_data(df)
     plot_distributions(df, exclude_columns=["passengerid", "survived"], layout="single")
     plot_categorical_distributions(df, layout="single", top_n=100)
     plot_correlation_heatmap(df, method="kendall", cmap="viridis")
     plot_correlation_heatmap(df, selected_columns=["Age", "SibSp", "Parch", "Fare"])
+    print("\nCorrelation:")
+    corr_df = plot_correlation_heatmap(df, show_dataframe=True)
+    print(corr_df)
+
