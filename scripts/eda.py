@@ -173,6 +173,68 @@ def plot_correlation_heatmap(df, selected_columns=None, method="pearson", figsiz
     plt.show()
 
 
+import matplotlib.pyplot as plt
+import seaborn as sns
+import math
+
+def plot_numeric_distributions(df, selected_columns=None, exclude_columns=None, hue_feature=None, bins=30, layout="multiple"):
+    """
+    Plots distributions for numerical features with optional hue feature grouping.
+
+    Args:
+        df (pd.DataFrame): The dataset.
+        selected_columns (list, optional): List of specific numerical columns to plot.
+        exclude_columns (list, optional): List of numerical columns to exclude from plotting.
+        hue_feature (str, optional): Categorical feature for grouping (e.g., "Survived").
+        bins (int): Number of bins for histograms.
+        layout (str): "multiple" (default) to display one-by-one or "single" to show all in one figure.
+    """
+
+    num_cols = list(df.select_dtypes(include=["int64", "float64"]).columns)  # Convert to list to avoid Index issues
+
+    # Apply exclusions first
+    if exclude_columns:
+        num_cols = [col for col in num_cols if col not in exclude_columns]
+
+    # If specific columns are requested, filter them
+    if selected_columns:
+        num_cols = [col for col in selected_columns if col in num_cols]
+
+    # ✅ FIX: Use len(num_cols) instead of `if not num_cols`
+    if len(num_cols) == 0:
+        print("⚠️ No numerical columns found to plot!")
+        return
+
+    df_copy = df.copy()  # ✅ Ensure we don’t modify the original DataFrame
+
+    if layout == "single":
+        num_cols_count = len(num_cols)
+        rows = math.ceil(num_cols_count / 2)
+
+        fig, axes = plt.subplots(rows, 2, figsize=(15, rows * 4))
+        axes = axes.flatten()
+
+        for i, col in enumerate(num_cols):
+            ax = axes[i]
+            sns.histplot(data=df_copy, x=col, hue=hue_feature, bins=bins, kde=True, 
+                         palette="coolwarm" if hue_feature else None, ax=ax, alpha=0.6)
+            ax.set_title(f"Distribution of {col}" + (f" by {hue_feature}" if hue_feature else ""))
+            
+        if num_cols_count % 2 != 0:
+            fig.delaxes(axes[-1])  # Remove empty subplot if an odd number of variables
+
+        plt.tight_layout()
+        plt.show()
+
+    else:
+        for col in num_cols:
+            plt.figure(figsize=(8, 5))
+            sns.histplot(data=df_copy, x=col, hue=hue_feature, bins=bins, kde=True, 
+                         palette="coolwarm" if hue_feature else None, alpha=0.6)
+            plt.title(f"Distribution of {col}" + (f" by {hue_feature}" if hue_feature else ""))
+            plt.show()
+
+
 if __name__ == "__main__":
     df = load_data()
     summarize_data(df)
@@ -184,4 +246,9 @@ if __name__ == "__main__":
     print("\nCorrelation:")
     corr_df = plot_correlation_heatmap(df, show_dataframe=True)
     print(corr_df)
+    plot_numeric_distributions(df, layout="single", hue_feature="Survived")
+    plot_numeric_distributions(df, layout="single", selected_columns=["Age", "Fare"], hue_feature="Survived", bins=10)
+
+
+    
 
