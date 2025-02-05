@@ -27,6 +27,15 @@ def extract_title(df, name_column="Name"):
 
     return df
 
+def create_family_size(df, sibsp_col="SibSp", parch_col="Parch"):
+    """Creates a new feature dynamically for family size."""
+    df = df.copy()
+
+    if sibsp_col in df.columns and parch_col in df.columns:
+        df["FamilySize"] = df[sibsp_col] + df[parch_col] + 1
+    return df
+
+
 if __name__ == "__main__":
     df = load_data()  
     df = extract_title(df, name_column="Name")
