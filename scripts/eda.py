@@ -1,8 +1,7 @@
 import matplotlib.pyplot as plt
 import seaborn as sns
 import math
-import pandas as pd
-from data_loader import load_data
+from .data_loader import load_data
 
 def summarize_data(df):
     """Prints dataset info, missing values, and summary statistics."""
@@ -48,9 +47,9 @@ def plot_distributions(df, exclude_columns=None, layout="multiple"):
             plt.title(f"Distribution of {col}")
             plt.show()
 
-def plot_categorical_distributions(df, exclude_columns=None, selected_columns=None, layout="multiple", top_n=100):
+def plot_categorical_distributions(df, exclude_columns=None, selected_columns=None, layout="multiple", top_n=100, hue_feature=None):
     """
-    Plots count distributions for categorical features.
+    Plots count distributions for categorical features with an optional survival rate split.
 
     Args:
         df (pd.DataFrame): The dataset.
@@ -58,6 +57,7 @@ def plot_categorical_distributions(df, exclude_columns=None, selected_columns=No
         selected_columns (list, optional): List of specific categorical columns to plot.
         layout (str): "multiple" (default) to display one-by-one or "single" to show all in one figure.
         top_n (int): Maximum number of unique values to display per category, ordered by count.
+        hue_feature (str, optional): Feature by which to check distribution differences (e.g., "Survived").
     """
     
     # Step 1: Identify categorical columns
@@ -86,9 +86,9 @@ def plot_categorical_distributions(df, exclude_columns=None, selected_columns=No
             top_categories = df_copy[col].value_counts().nlargest(top_n)
 
             sns.countplot(data=df_copy[df_copy[col].isin(top_categories.index)], 
-                          x=col, hue=col, palette="coolwarm", ax=axes[i], legend=False, 
-                          order=top_categories.index)
-            axes[i].set_title(f"Distribution of {col}")
+                          x=col, hue=hue_feature if hue_feature else col, palette="coolwarm", ax=axes[i], 
+                          legend=True if hue_feature else False, order=top_categories.index)
+            axes[i].set_title(f"Distribution of {col}" + (f" by {hue_feature}" if hue_feature else ""))
 
             # Fix: Ensure x-ticks are correctly set before applying labels
             axes[i].set_xticks(range(len(top_categories)))
@@ -108,9 +108,9 @@ def plot_categorical_distributions(df, exclude_columns=None, selected_columns=No
             top_categories = df_copy[col].value_counts().nlargest(top_n)
 
             ax = sns.countplot(data=df_copy[df_copy[col].isin(top_categories.index)], 
-                               x=col, hue=col, palette="coolwarm", legend=False, 
-                               order=top_categories.index)
-            plt.title(f"Distribution of {col}")
+                          x=col, hue=hue_feature if hue_feature else col, palette="coolwarm", 
+                          legend=True if hue_feature else False, order=top_categories.index)
+            plt.title(f"Distribution of {col}" + (f" by {hue_feature}" if hue_feature else ""))
 
             # Fix: Ensure x-ticks are correctly set before applying labels
             ax.set_xticks(range(len(top_categories)))
@@ -161,6 +161,7 @@ if __name__ == "__main__":
     summarize_data(df)
     plot_distributions(df, exclude_columns=["passengerid", "survived"], layout="single")
     plot_categorical_distributions(df, layout="single", top_n=100)
+    plot_categorical_distributions(df, selected_columns=["Pclass", "Sex", "Embarked"], hue_feature="Survived")
     plot_correlation_heatmap(df, method="kendall", cmap="viridis")
     plot_correlation_heatmap(df, selected_columns=["Age", "SibSp", "Parch", "Fare"])
     print("\nCorrelation:")
