@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import seaborn as sns
 import math
+from sklearn.preprocessing import LabelEncoder
 from .data_loader import load_data
 
 def summarize_data(df):
@@ -135,22 +136,39 @@ def plot_categorical_distributions(df, exclude_columns=None, selected_columns=No
 
             plt.show()
 
-def plot_correlation_heatmap(df, selected_columns=None, method="pearson", figsize=(10, 8), annot=True, cmap="coolwarm", show_dataframe=False):
+def plot_correlation_heatmap(df, selected_columns=None, method="pearson", include_categorical=False, 
+                             figsize=(10, 8), annot=True, cmap="coolwarm", show_dataframe=False):
     """
-    Plots a heatmap of the correlation matrix for numerical features.
+    Plots a heatmap of the correlation matrix for numerical features (with optional categorical feature encoding).
 
     Args:
         df (pd.DataFrame): The dataset.
-        selected_columns (list, optional): List of specific numerical columns to include in the heatmap.
+        selected_columns (list, optional): List of specific columns to include in the heatmap.
         method (str): Correlation method - "pearson", "spearman", or "kendall". Default is "pearson".
+        include_categorical (bool): Whether to include categorical features (converted to numeric). Default is False.
         figsize (tuple): Size of the heatmap figure. Default is (10, 8).
         annot (bool): Whether to display correlation values inside the heatmap. Default is True.
         cmap (str): Colormap for the heatmap. Default is "coolwarm".
+        show_dataframe (bool): Whether to return the correlation matrix instead of plotting. Default is False.
     """
 
-    # Select numerical columns
-    num_df = df.select_dtypes(include=["int64", "float64"])
+    df_copy = df.copy()  # Prevent modifying the original dataset
 
+    # Select numerical columns
+    num_df = df_copy.select_dtypes(include=["int64", "float64"])
+
+    # Encode categorical variables if requested
+    if include_categorical:
+        cat_cols = df_copy.select_dtypes(include=["object"]).columns
+
+        if len(cat_cols) > 0:
+            from sklearn.preprocessing import LabelEncoder
+            for col in cat_cols:
+                df_copy[col] = LabelEncoder().fit_transform(df_copy[col].astype(str))  # Convert to numeric
+
+        all_numeric_cols = num_df.columns.tolist() + cat_cols.tolist()  # Keep original numeric + encoded categorical
+        num_df = df_copy[all_numeric_cols]  # Select all numeric & newly encoded columns
+        
     # If selected_columns are provided, filter them
     if selected_columns:
         num_df = num_df[selected_columns]
@@ -171,11 +189,6 @@ def plot_correlation_heatmap(df, selected_columns=None, method="pearson", figsiz
     sns.heatmap(corr_matrix, annot=annot, cmap=cmap, fmt=".2f", linewidths=0.5, vmin=-1, vmax=1)
     plt.title(f"{method.capitalize()} Correlation Heatmap")
     plt.show()
-
-
-import matplotlib.pyplot as plt
-import seaborn as sns
-import math
 
 def plot_numeric_distributions(df, selected_columns=None, exclude_columns=None, hue_feature=None, bins=30, layout="multiple"):
     """
@@ -237,17 +250,23 @@ def plot_numeric_distributions(df, selected_columns=None, exclude_columns=None, 
 
 if __name__ == "__main__":
     df = load_data()
-    summarize_data(df)
-    plot_distributions(df, exclude_columns=["passengerid", "survived"], layout="single")
-    plot_categorical_distributions(df, layout="single", top_n=100)
-    plot_categorical_distributions(df, selected_columns=["Pclass", "Sex", "Embarked"], hue_feature="Survived")
-    plot_correlation_heatmap(df, method="kendall", cmap="viridis")
-    plot_correlation_heatmap(df, selected_columns=["Age", "SibSp", "Parch", "Fare"])
-    print("\nCorrelation:")
-    corr_df = plot_correlation_heatmap(df, show_dataframe=True)
-    print(corr_df)
-    plot_numeric_distributions(df, layout="single", hue_feature="Survived")
-    plot_numeric_distributions(df, layout="single", selected_columns=["Age", "Fare"], hue_feature="Survived", bins=10)
+    # summarize_data(df)
+    # plot_distributions(df, exclude_columns=["passengerid", "survived"], layout="single")
+    # plot_categorical_distributions(df, layout="single", top_n=100)
+    # plot_categorical_distributions(df, selected_columns=["Pclass", "Sex", "Embarked"], hue_feature="Survived")
+    # plot_correlation_heatmap(df, method="kendall", cmap="viridis")
+    # plot_correlation_heatmap(df, selected_columns=["Age", "SibSp", "Parch", "Fare"])
+    # print("\nCorrelation:")
+    # corr_df = plot_correlation_heatmap(df, show_dataframe=True)
+    # print(corr_df)
+    # plot_numeric_distributions(df, layout="single", hue_feature="Survived")
+    # plot_numeric_distributions(df, layout="single", selected_columns=["Age", "Fare"], hue_feature="Survived", bins=10)
+    corr_matrix = plot_correlation_heatmap(df, include_categorical=True, show_dataframe=True)
+    print(corr_matrix)
+    plot_correlation_heatmap(df, method="spearman", include_categorical=True)
+
+
+
 
 
     
