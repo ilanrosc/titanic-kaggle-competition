@@ -1,61 +1,77 @@
 from sklearn.preprocessing import LabelEncoder, StandardScaler
-from .data_loader import load_data
+import pandas as pd
+from data_loader import load_data
 
-def fill_missing_values(df, strategy="median", constant_value=None):
+def fill_missing_values(df: pd.DataFrame, 
+                        num_strategy: str = "median", 
+                        cat_strategy: str = "mode", 
+                        fill_value=None, 
+                        exclude_columns=None) -> pd.DataFrame:
     """
-    Handles missing values using different strategies.
+    Handles missing values separately for numerical and categorical features.
 
     Args:
         df (pd.DataFrame): The dataset.
-        strategy (str): Strategy to use - 'mean', 'median', 'mode', 'constant', 'ffill', 'bfill', or 'drop'.
-        constant_value (optional): Value to use when strategy is 'constant'.
+        num_strategy (str): Strategy for numerical columns - "mean", "median", "mode", "constant", "ffill", "bfill", or "drop".
+        cat_strategy (str): Strategy for categorical columns - "mode", "constant", "ffill", "bfill", or "drop".
+        fill_value: Value to use when strategy="constant".
+        exclude_columns (list, optional): List of columns to exclude from processing.
 
     Returns:
         pd.DataFrame: The DataFrame with missing values handled.
     """
-    df = df.copy()
 
-    num_cols = df.select_dtypes(include=["int64", "float64"]).columns
-    cat_cols = df.select_dtypes(include=["object"]).columns
+    df_copy = df.copy()
 
-    for col in df.columns:
-        if df[col].isnull().sum() > 0: 
-            if col in num_cols:
-                if strategy == "mean":
-                    df[col] = df[col].fillna(df[col].mean())
-                elif strategy == "median":
-                    df[col] = df[col].fillna(df[col].median())
-                elif strategy == "mode":
-                    df[col] = df[col].fillna(df[col].mode()[0])
-                elif strategy == "constant":
-                    if constant_value is not None:
-                        df[col] = df[col].fillna(constant_value)
-                    else:
-                        raise ValueError(f"Must provide `constant_value` when strategy is 'constant'")
-                elif strategy == "ffill":
-                    df[col] = df[col].fillna(method="ffill")
-                elif strategy == "bfill":
-                    df[col] = df[col].fillna(method="bfill")
-                elif strategy == "drop":
-                    df.dropna(subset=[col], inplace=True)
+    # Exclude specified columns
+    if exclude_columns:
+        cols_to_process = [col for col in df_copy.columns if col not in exclude_columns]
+    else:
+        cols_to_process = df_copy.columns
+
+    # Identify numerical and categorical columns
+    num_cols = df_copy[cols_to_process].select_dtypes(include=["int64", "float64"]).columns
+    cat_cols = df_copy[cols_to_process].select_dtypes(include=["object", "category"]).columns
+
+    # Handle missing values for numerical columns
+    for col in num_cols:
+        if df_copy[col].isnull().sum() > 0:
+            if num_strategy == "mean":
+                df_copy[col] = df_copy[col].fillna(df_copy[col].mean())
+            elif num_strategy == "median":
+                df_copy[col] = df_copy[col].fillna(df_copy[col].median())
+            elif num_strategy == "mode":
+                df_copy[col] = df_copy[col].fillna(df_copy[col].mode()[0])
+            elif num_strategy == "constant":
+                if fill_value is not None:
+                    df_copy[col] = df_copy[col].fillna(fill_value)
                 else:
-                    raise ValueError(f"Invalid strategy '{strategy}' for numerical column '{col}'.")
+                    raise ValueError("For strategy='constant', a fill_value must be provided.")
+            elif num_strategy == "ffill":
+                df_copy[col] = df_copy[col].ffill()
+            elif num_strategy == "bfill":
+                df_copy[col] = df_copy[col].bfill()
+            elif num_strategy == "drop":
+                df_copy.dropna(subset=[col], inplace=True)
 
-            elif col in cat_cols:
-                if strategy in ["mode", "ffill", "bfill", "constant"]:
-                    if strategy == "mode":
-                        df[col] = df[col].fillna(df[col].mode()[0])
-                    elif strategy == "constant":
-                        if constant_value is not None:
-                            df[col] = df[col].fillna(constant_value)
-                        else:
-                            raise ValueError(f"Must provide `constant_value` when strategy is 'constant'")
-                    elif strategy in ["ffill", "bfill"]:
-                        df[col] = df[col].fillna(method=strategy)
+    # Handle missing values for categorical columns
+    for col in cat_cols:
+        if df_copy[col].isnull().sum() > 0:
+            if cat_strategy == "mode":
+                df_copy[col] = df_copy[col].fillna(df_copy[col].mode()[0])
+            elif cat_strategy == "constant":
+                if fill_value is not None:
+                    df_copy[col] = df_copy[col].fillna(fill_value)
                 else:
-                    raise ValueError(f"Strategy '{strategy}' is not valid for categorical column '{col}'. Use 'mode', 'constant', 'ffill', or 'bfill'.")
-    
-    return df
+                    raise ValueError("For strategy='constant', a fill_value must be provided.")
+            elif cat_strategy == "ffill":
+                df_copy[col] = df_copy[col].ffill()
+            elif cat_strategy == "bfill":
+                df_copy[col] = df_copy[col].bfill()
+            elif cat_strategy == "drop":
+                df_copy.dropna(subset=[col], inplace=True)
+
+    return df_copy
 
 def encode_categorical(df):
     """Encodes categorical features dynamically."""
@@ -77,8 +93,15 @@ if __name__ == "__main__":
     df = load_data()  
     
     # Example usage:
-    df = fill_missing_values(df, strategy="mode") 
-    df = encode_categorical(df)
-    df = scale_features(df)
-    
-    print(df.head())
+    print("Fill missing values using different strategies for numerical & categorical columns")
+    df_cleaned_v1 = fill_missing_values(df, num_strategy="median", cat_strategy="mode", exclude_columns=["PassengerId"])
+    print(df_cleaned_v1.head())
+    print("Forward fill for categorical, mean fill for numerical")
+    df_cleaned_v2 = fill_missing_values(df, num_strategy="mean", cat_strategy="ffill")
+    print(df_cleaned_v2.head())
+    print("Drop missing values in numerical features but use mode for categorical")
+    df_cleaned_v3 = fill_missing_values(df, num_strategy="drop", cat_strategy="mode")
+    print(df_cleaned_v3.head())
+    print("Fill all missing categorical values with 'Unknown' and numeric with median")
+    df_cleaned_v4 = fill_missing_values(df, num_strategy="median", cat_strategy="constant", fill_value="Unknown")
+    print(df_cleaned_v4.head())
