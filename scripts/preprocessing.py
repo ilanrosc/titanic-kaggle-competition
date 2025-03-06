@@ -1,4 +1,5 @@
 from sklearn.preprocessing import LabelEncoder, StandardScaler
+from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -6,21 +7,23 @@ import seaborn as sns
 import scipy.stats as stats
 from scipy.special import logit
 from scipy.stats import shapiro, normaltest, skew, kurtosis
-from data_loader import load_data
+from .data_loader import load_data
 
 def fill_missing_values(df: pd.DataFrame, 
                         num_strategy: str = "median", 
                         cat_strategy: str = "mode", 
-                        fill_value=None, 
+                        fill_value=None,
+                        columns: list = None, 
                         exclude_columns=None) -> pd.DataFrame:
     """
     Handles missing values separately for numerical and categorical features.
 
     Args:
         df (pd.DataFrame): The dataset.
-        num_strategy (str): Strategy for numerical columns - "mean", "median", "mode", "constant", "ffill", "bfill", or "drop".
-        cat_strategy (str): Strategy for categorical columns - "mode", "constant", "ffill", "bfill", or "drop".
+        num_strategy (str): Strategy for numerical columns - "mean", "median", "mode", "constant", "ffill", "bfill", "drop", or "predictive".
+        cat_strategy (str): Strategy for categorical columns - "mode", "constant", "ffill", "bfill", "drop", or "predictive".
         fill_value: Value to use when strategy="constant".
+        columns (list, optional): Specific columns to fill. Fills all columns if None.
         exclude_columns (list, optional): List of columns to exclude from processing.
 
     Returns:
@@ -29,11 +32,15 @@ def fill_missing_values(df: pd.DataFrame,
 
     df_copy = df.copy()
 
-    # Exclude specified columns
-    if exclude_columns:
-        cols_to_process = [col for col in df_copy.columns if col not in exclude_columns]
+    # Handle specified columns
+    if columns:
+        cols_to_process = columns
     else:
         cols_to_process = df_copy.columns
+
+    # Exclude specified columns
+    if exclude_columns:
+        cols_to_process = [col for col in cols_to_process if col not in exclude_columns]
 
     # Identify numerical and categorical columns
     num_cols = df_copy[cols_to_process].select_dtypes(include=["int64", "float64"]).columns
@@ -59,6 +66,23 @@ def fill_missing_values(df: pd.DataFrame,
                 df_copy[col] = df_copy[col].bfill()
             elif num_strategy == "drop":
                 df_copy.dropna(subset=[col], inplace=True)
+            elif num_strategy == "predictive":
+                # Separate missing and non-missing data
+                missing_df = df_copy[df_copy[col].isna()]
+                non_missing_df = df_copy[~df_copy[col].isna()]
+
+                # Select features for prediction
+                features = non_missing_df.drop(columns=[col]).columns
+
+                # Choose model based on column type
+                model = RandomForestRegressor(n_estimators=100, random_state=42)
+
+                # Train model
+                model.fit(non_missing_df[features], non_missing_df[col])
+
+                # Predict missing values
+                predicted_values = model.predict(missing_df[features])
+                df_copy.loc[df_copy[col].isna(), col] = predicted_values
 
     # Handle missing values for categorical columns
     for col in cat_cols:
@@ -76,6 +100,35 @@ def fill_missing_values(df: pd.DataFrame,
                 df_copy[col] = df_copy[col].bfill()
             elif cat_strategy == "drop":
                 df_copy.dropna(subset=[col], inplace=True)
+            elif cat_strategy == "predictive":
+                # Separate missing and non-missing data
+                missing_df = df_copy[df_copy[col].isna()]
+                non_missing_df = df_copy[~df_copy[col].isna()]
+
+                # Select features for prediction
+                features = non_missing_df.drop(columns=[col]).columns
+
+                # Encode categorical features
+                encoders = {}
+                for feature in features:
+                    if df_copy[feature].dtype == "object":
+                        encoders[feature] = LabelEncoder()
+                        df_copy[feature] = encoders[feature].fit_transform(df_copy[feature].astype(str))
+
+                # Choose model based on column type
+                model = RandomForestClassifier(n_estimators=100, random_state=42)
+
+                # Train model
+                model.fit(non_missing_df[features], non_missing_df[col])
+
+                # Predict missing values
+                predicted_values = model.predict(missing_df[features])
+                df_copy.loc[df_copy[col].isna(), col] = predicted_values
+
+                # Decode categorical features
+                for feature in features:
+                    if feature in encoders:
+                        df_copy[feature] = encoders[feature].inverse_transform(df_copy[feature].astype(int))
 
     return df_copy
 

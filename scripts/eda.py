@@ -1,22 +1,49 @@
 import matplotlib.pyplot as plt
 import seaborn as sns
 import math
-from sklearn.preprocessing import LabelEncoder
+# from sklearn.preprocessing import LabelEncoder
 from .data_loader import load_data
 
-def summarize_data(df):
-    """Prints dataset info, missing values, and summary statistics."""
-    print("📌 Dataset Info:")
-    df.info()
+def summarize_data(df, show=('info', 'isnull', 'duplicates', 'describe')):
+    """
+    Prints dataset info, missing values, duplicate count, and summary statistics based on the 'show' parameter.
 
-    print("\n📌 Missing Values:")
-    print(df.isnull().sum())
+    Args:
+        df (pd.DataFrame): The dataset to summarize.
+        show (tuple): Specifies which parts to display. Options are:
+            - 'info': Dataset info.
+            - 'isnull': Missing values summary.
+            - 'duplicates': Count of duplicate rows.
+            - 'describe': Summary statistics.
+    """
+    # Dataset Info
+    if 'info' in show:
+        print("📌 Dataset Info:")
+        df.info()
+        print("-" * 50)
 
-    duplicate_count = df.duplicated().sum()
-    print(f"\n📌 Duplicate Rows: {duplicate_count}")
+    # Missing Values Summary
+    if 'isnull' in show:
+        missing = df.isnull().sum()
+        print("\n📌 Missing Values:")
+        if missing.sum() > 0:
+            print(missing[missing > 0])
+        else:
+            print("No missing values.")
+        print("-" * 50)
 
-    print("\n📌 Summary Statistics:")
-    print(df.describe())
+    # Duplicate Rows
+    if 'duplicates' in show:
+        duplicate_count = df.duplicated().sum()
+        print(f"\n📌 Duplicate Rows: {duplicate_count}")
+        print("-" * 50)
+
+    # Summary Statistics
+    if 'describe' in show:
+        print("\n📌 Summary Statistics:")
+        print(df.describe(include='all'))
+        print("-" * 50)
+
 
 
 def plot_distributions(df, exclude_columns=None, layout="multiple"):
